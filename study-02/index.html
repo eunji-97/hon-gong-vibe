@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tasks - Ultimate Todo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>My Tasks</h1>
+            <div class="header-actions">
+                <button id="export-btn" class="icon-btn" title="데이터 내보내기" aria-label="데이터 내보내기">📤</button>
+                <button id="import-btn-trigger" class="icon-btn" title="데이터 가져오기" aria-label="데이터 가져오기">📥</button>
+                <input type="file" id="import-input" accept=".json" class="hidden" aria-hidden="true">
+                <button id="theme-toggle" title="테마 변경 (Alt+D)" aria-label="테마 변경">
+                    <span class="sun-icon">☀️</span>
+                    <span class="moon-icon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="dashboard" aria-live="polite">
+            <div class="main-stats">
+                <div class="stats-info">
+                    <span>전체 진행률</span>
+                    <span id="overall-progress-text">0/0 완료 (0%)</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div id="overall-progress-fill" class="progress-bar-fill"></div>
+                </div>
+            </div>
+            <div id="cheer-message" class="cheer-message">오늘도 힘내세요!</div>
+            <div class="sub-stats">
+                <div class="category-mini-stats" id="category-stats"></div>
+                <div class="today-stats">오늘 추가됨: <span id="today-count">0</span></div>
+            </div>
+            <div id="quote-container" class="quote-container">
+                <p id="quote-text">"할 수 있다고 믿는다면, 당신은 이미 절반은 온 것입니다."</p>
+            </div>
+        </section>
+
+        <div class="controls-section">
+            <div class="filter-section">
+                <button class="filter-btn active" data-filter="all" aria-label="전체 보기">전체</button>
+                <button class="filter-btn" data-filter="work" aria-label="업무 보기">업무</button>
+                <button class="filter-btn" data-filter="personal" aria-label="개인 보기">개인</button>
+                <button class="filter-btn" data-filter="study" aria-label="공부 보기">공부</button>
+            </div>
+            <div class="sort-section">
+                <label for="sort-select">정렬:</label>
+                <select id="sort-select" aria-label="정렬 방식 선택">
+                    <option value="manual">수동 (드래그)</option>
+                    <option value="newest">최신순</option>
+                    <option value="oldest">오래된순</option>
+                    <option value="category">카테고리순</option>
+                    <option value="status">완료 상태순</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="input-section">
+            <select id="category-select" aria-label="카테고리 선택">
+                <option value="work">업무</option>
+                <option value="personal">개인</option>
+                <option value="study">공부</option>
+            </select>
+            <input type="text" id="todo-input" placeholder="새로운 할 일을 입력하세요... (Alt+N)" autocomplete="off" aria-label="할 일 입력">
+            <button id="add-btn" aria-label="추가">추가</button>
+        </div>
+
+        <div class="search-section">
+            <input type="text" id="search-input" placeholder="할 일 검색... (Alt+S)" autocomplete="off" aria-label="검색">
+        </div>
+        
+        <ul id="todo-list" class="todo-list" role="list">
+            <!-- 할 일 항목이 여기에 추가됩니다 -->
+        </ul>
+
+        <div id="empty-state" class="empty-state hidden">
+            <p>할 일이 없습니다. 새로운 작업을 시작해보세요!</p>
+        </div>
+
+        <div class="list-footer">
+            <span id="items-left">0개 남음</span>
+            <button id="clear-completed" class="text-btn" aria-label="완료된 항목 모두 삭제">완료된 항목 삭제</button>
+        </div>
+    </div>
+
+    <!-- Undo Snackbar -->
+    <div id="undo-snackbar" class="snackbar hidden">
+        <span>항목이 삭제되었습니다.</span>
+        <button id="undo-btn">복구</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
