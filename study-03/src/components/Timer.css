@@ -1,0 +1,33 @@
+.timer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.timer-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: background 0.3s ease;
+}
+
+.timer-inner {
+  width: 68px;
+  height: 68px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.timer-seconds {
+  font-size: 1.5rem;
+  font-weight: 800;
+  transition: color 0.3s ease;
+}
