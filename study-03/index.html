@@ -1,13 +1,347 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>study-03</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>심플 퀴즈 마스터</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --secondary-text: #666;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 { margin-bottom: 20px; color: var(--primary-color); }
+        p { margin-bottom: 30px; color: var(--secondary-text); }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #357abd;
+            transform: translateY(-2px);
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Quiz Screen */
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .question-info {
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        .question-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            line-height: 1.4;
+            text-align: left;
+        }
+
+        .options-container {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-btn {
+            padding: 15px;
+            text-align: left;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #eef2f7;
+            border-color: var(--primary-color);
+        }
+
+        .option-btn.correct {
+            background-color: #e8f5e9;
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .option-btn.incorrect {
+            background-color: #ffebee;
+            border-color: var(--error-color);
+            color: var(--error-color);
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .explanation {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+
+        /* Result Screen */
+        .result-score {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 20px 0;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e1f5fe;
+            color: #0288d1;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <h1>심플 퀴즈 마스터</h1>
+        <p>한국사, 과학, 지리, 일반상식 총 40문제가 준비되어 있습니다.<br>도전하시겠습니까?</p>
+        <button class="btn" onclick="initGame()">게임 시작</button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="screen">
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div class="question-info">
+            <span id="category-name" class="category-badge">카테고리</span>
+            <span id="current-step">1/40</span>
+        </div>
+        <div id="question-text" class="question-text">문제가 여기에 표시됩니다.</div>
+        <div id="options-container" class="options-container">
+            <!-- Options will be generated here -->
+        </div>
+        <div id="feedback" class="feedback">
+            <div id="feedback-text"></div>
+            <div id="explanation" class="explanation"></div>
+            <button class="btn" style="margin-top: 15px;" onclick="nextQuestion()">다음 문제</button>
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="screen">
+        <h1>결과</h1>
+        <div class="result-score"><span id="final-score">0</span> / 40</div>
+        <p id="result-message">수고하셨습니다!</p>
+        <button class="btn" onclick="resetGame()">다시 시작하기</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        // 한국사 (10문제)
+        { id: 1, category: "한국사", question: "조선을 건국한 태조의 이름은?", options: ["이성계", "왕건", "이방원", "세종"], correctAnswer: 0, explanation: "이성계는 1392년 고려를 멸망시키고 조선을 건국했습니다." },
+        { id: 2, category: "한국사", question: "훈민정음을 창제한 왕은?", options: ["태종", "세종", "성종", "정조"], correctAnswer: 1, explanation: "세종대왕은 백성들이 쉽게 글을 익히도록 훈민정음을 창제했습니다." },
+        { id: 3, category: "한국사", question: "거북선을 활용해 한산도 대첩을 승리로 이끈 장군은?", options: ["권율", "이순신", "강감찬", "을지문덕"], correctAnswer: 1, explanation: "이순신 장군은 임진왜란 당시 세계 최초의 철갑선인 거북선을 활용해 대승을 거두었습니다." },
+        { id: 4, category: "한국사", question: "고려를 건국한 왕은?", options: ["왕건", "궁예", "견훤", "대조영"], correctAnswer: 0, explanation: "왕건은 후삼국을 통일하고 918년 고려를 세웠습니다." },
+        { id: 5, category: "한국사", question: "발해를 건국한 인물은?", options: ["온조", "박혁거세", "대조영", "동명성왕"], correctAnswer: 2, explanation: "대조영은 고구려 멸망 후 유민들을 이끌고 발해를 세웠습니다." },
+        { id: 6, category: "한국사", question: "3·1 운동이 일어난 해는?", options: ["1910년", "1919년", "1945년", "1950년"], correctAnswer: 1, explanation: "1919년 3월 1일, 일제 강점기에 전 국민이 독립을 선언하며 만세 운동을 펼쳤습니다." },
+        { id: 7, category: "한국사", question: "독립운동가 중 '도시락 폭탄'으로 알려진 상하이 홍커우 공원 의거의 주인공은?", options: ["안중근", "김구", "윤봉길", "이봉창"], correctAnswer: 2, explanation: "윤봉길 의사는 1932년 상하이 홍커우 공원에서 일본 주요 인물들에게 폭탄을 던졌습니다." },
+        { id: 8, category: "한국사", question: "신라의 삼국 통일에 결정적인 기여를 한 화랑 출신의 장군은?", options: ["계백", "김유신", "연개소문", "이사부"], correctAnswer: 1, explanation: "김유신 장군은 신라가 백제와 고구려를 멸망시키고 삼국을 통일하는 데 큰 공을 세웠습니다." },
+        { id: 9, category: "한국사", question: "일제 강점기 시절, 하얼빈역에서 이토 히로부미를 사살한 독립운동가는?", options: ["윤봉길", "안중근", "김좌진", "안창호"], correctAnswer: 1, explanation: "안중근 의사는 1909년 하얼빈에서 대한제국 침략의 원흉인 이토 히로부미를 처단했습니다." },
+        { id: 10, category: "한국사", question: "백제의 마지막 왕은?", options: ["근초고왕", "무령왕", "의자왕", "성왕"], correctAnswer: 2, explanation: "의자왕은 백제의 제31대 왕이자 마지막 왕입니다." },
+
+        // 과학 (10문제)
+        { id: 11, category: "과학", question: "태양계에서 가장 큰 행성은?", options: ["지구", "화성", "목성", "토성"], correctAnswer: 2, explanation: "목성은 태양계 8개 행성 중 가장 부피가 크고 질량이 무겁습니다." },
+        { id: 12, category: "과학", question: "물(H2O)의 끓는점은 몇 도(℃)입니까? (표준 기압 기준)", options: ["50도", "80도", "100도", "120도"], correctAnswer: 2, explanation: "표준 기압(1기압)에서 물은 100도에서 끓습니다." },
+        { id: 13, category: "과학", question: "만유인력의 법칙을 발견한 과학자는?", options: ["아인슈타인", "뉴턴", "에디슨", "갈릴레이"], correctAnswer: 1, explanation: "아이작 뉴턴은 사과가 떨어지는 것을 보고 만유인력의 법칙을 정리했습니다." },
+        { id: 14, category: "과학", question: "지구의 위성은 무엇입니까?", options: ["태양", "달", "수성", "금성"], correctAnswer: 1, explanation: "달은 지구 주위를 공전하는 유일한 자연 위성입니다." },
+        { id: 15, category: "과학", question: "빛의 속도는 초당 약 몇 km입니까?", options: ["10만 km", "30만 km", "50만 km", "100만 km"], correctAnswer: 1, explanation: "빛의 속도는 진공 상태에서 초당 약 299,792km(약 30만 km)입니다." },
+        { id: 16, category: "과학", question: "식물이 햇빛을 이용해 영양분을 만드는 과정은?", options: ["호흡", "증산", "광합성", "삼투"], correctAnswer: 2, explanation: "광합성은 식물이 빛 에너지를 이용해 이산화탄소와 물로부터 유기물을 합성하는 과정입니다." },
+        { id: 17, category: "과학", question: "우리 몸에서 혈액을 온몸으로 보내는 펌프 역할을 하는 장기는?", options: ["간", "폐", "위", "심장"], correctAnswer: 3, explanation: "심장은 근육의 수축과 이완을 통해 혈액을 순환시킵니다." },
+        { id: 18, category: "과학", question: "공기 중 가장 많은 부피를 차지하는 기체는?", options: ["산소", "이산화탄소", "질소", "수소"], correctAnswer: 2, explanation: "지구 대기의 약 78%는 질소로 이루어져 있습니다." },
+        { id: 19, category: "과학", question: "전구를 발명한 미국의 발명가는?", options: ["테슬라", "벨", "에디슨", "와트"], correctAnswer: 2, explanation: "토마스 에디슨은 백열전구를 비롯해 수많은 발명품을 남겼습니다." },
+        { id: 20, category: "과학", question: "원소 기호 'O'가 상징하는 원소는?", options: ["수소", "산소", "탄소", "금"], correctAnswer: 1, explanation: "산소의 원소 기호는 Oxygen의 앞 글자인 O입니다." },
+
+        // 지리 (10문제)
+        { id: 21, category: "지리", question: "세계에서 가장 면적이 넓은 나라는?", options: ["중국", "미국", "러시아", "캐나다"], correctAnswer: 2, explanation: "러시아는 세계 영토의 약 1/9을 차지하는 가장 큰 나라입니다." },
+        { id: 22, category: "지리", question: "대한민국에서 가장 높은 산은?", options: ["지리산", "설악산", "한라산", "백두산"], correctAnswer: 3, explanation: "백두산(2,744m)은 한반도에서 가장 높은 산입니다. (남한만 따지면 한라산)" },
+        { id: 23, category: "지리", question: "프랑스의 수도는?", options: ["런던", "로마", "베를린", "파리"], correctAnswer: 3, explanation: "파리는 프랑스의 정치, 경제, 문화의 중심지인 수도입니다." },
+        { id: 24, category: "지리", question: "세계에서 가장 큰 섬은?", options: ["독도", "제주도", "그린란드", "마다가스카르"], correctAnswer: 2, explanation: "그린란드는 북극해와 북대서양 사이에 있는 세계 최대의 섬입니다." },
+        { id: 25, category: "지리", question: "적도가 지나는 대륙이 아닌 곳은?", options: ["아프리카", "남아메리카", "아시아", "유럽"], correctAnswer: 3, explanation: "유럽 대륙은 적도보다 훨씬 북쪽에 위치합니다." },
+        { id: 26, category: "지리", question: "일본의 수도는?", options: ["오사카", "교토", "도쿄", "후쿠오카"], correctAnswer: 2, explanation: "도쿄는 일본의 수도이자 세계적인 대도시입니다." },
+        { id: 27, category: "지리", question: "세계에서 가장 긴 강은?", options: ["아마존강", "나일강", "미시시피강", "양쯔강"], correctAnswer: 1, explanation: "나일강은 약 6,650km로 세계에서 가장 긴 강으로 알려져 있습니다." },
+        { id: 28, category: "지리", question: "미국의 수도는?", options: ["뉴욕", "로스앤젤레스", "워싱턴 D.C.", "시카고"], correctAnswer: 2, explanation: "워싱턴 D.C.는 미국의 행정 중심지인 수도입니다." },
+        { id: 29, category: "지리", question: "이탈리아의 지형은 어떤 모양으로 유명합니까?", options: ["공 모양", "부츠 모양", "하트 모양", "별 모양"], correctAnswer: 1, explanation: "이탈리아 반도는 장화(부츠) 모양의 독특한 지형을 가지고 있습니다." },
+        { id: 30, category: "지리", question: "사하라 사막이 위치한 대륙은?", options: ["아시아", "아프리카", "오세아니아", "북아메리카"], correctAnswer: 1, explanation: "사하라 사막은 아프리카 북부 대부분을 차지하는 세계 최대의 고온 사막입니다." },
+
+        // 일반상식 (10문제)
+        { id: 31, category: "일반상식", question: "축구 경기에서 한 팀의 선수는 몇 명입니까?", options: ["9명", "10명", "11명", "12명"], correctAnswer: 2, explanation: "축구는 골키퍼를 포함해 각 팀당 11명의 선수가 경기를 뜁니다." },
+        { id: 32, category: "일반상식", question: "올림픽 상징인 '오륜기'의 원은 몇 개입니까?", options: ["3개", "4개", "5개", "6개"], correctAnswer: 2, explanation: "오륜기는 5대륙을 상징하는 5개의 고리가 연결된 모양입니다." },
+        { id: 33, category: "일반상식", question: "대한민국의 국화(나라꽃)는?", options: ["장미", "벚꽃", "무궁화", "국화"], correctAnswer: 2, explanation: "무궁화는 '영원히 피고 또 피어서 지지 않는 꽃'이라는 의미를 담은 한국의 국화입니다." },
+        { id: 34, category: "일반상식", question: "비타민 C가 많이 들어있는 과일은?", options: ["사과", "레몬", "포도", "바나나"], correctAnswer: 1, explanation: "레몬, 오렌지 등 감귤류 과일에는 비타민 C가 매우 풍부합니다." },
+        { id: 35, category: "일반상식", question: "전화기를 발명한 사람은?", options: ["에디슨", "벨", "노벨", "포드"], correctAnswer: 1, explanation: "알렉산더 그레이엄 벨은 1876년 최초의 실용적인 전화기를 발명했습니다." },
+        { id: 36, category: "일반상식", question: "노벨 평화상을 수여하는 나라는?", options: ["스웨덴", "노르웨이", "핀란드", "덴마크"], correctAnswer: 1, explanation: "다른 노벨상은 스웨덴에서 수여하지만, 평화상만은 노르웨이에서 수여합니다." },
+        { id: 37, category: "일반상식", question: "심청전에서 심청이가 아버지를 위해 빠진 곳은?", options: ["임진강", "낙동강", "인당수", "두만강"], correctAnswer: 2, explanation: "심청이는 아버지의 눈을 뜨게 하기 위해 공양미 삼백 석에 몸을 팔아 인당수에 빠졌습니다." },
+        { id: 38, category: "일반상식", question: "체스에서 가장 중요한 말로, 잡히면 게임이 끝나는 것은?", options: ["퀸", "룩", "나이트", "킹"], correctAnswer: 3, explanation: "킹이 공격받아 피할 수 없는 상태(체크메이트)가 되면 게임이 종료됩니다." },
+        { id: 39, category: "일반상식", question: "세계 3대 성인 중 한 명으로, 불교의 창시자는?", options: ["공자", "예수", "석가모니", "소크라테스"], correctAnswer: 2, explanation: "석가모니(고타마 싯다르타)는 인도에서 불교를 창시한 인물입니다." },
+        { id: 40, category: "일반상식", question: "대한민국의 화폐 단위는?", options: ["엔", "달러", "위안", "원"], correctAnswer: 3, explanation: "대한민국의 공식 화폐 단위는 '원(KRW)'입니다." }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    function initGame() {
+        currentQuestionIndex = 0;
+        score = 0;
+        switchScreen('quiz-screen');
+        showQuestion();
+    }
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function showQuestion() {
+        const question = questions[currentQuestionIndex];
+        const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+        document.getElementById('current-step').innerText = `${currentQuestionIndex + 1} / ${questions.length}`;
+        document.getElementById('category-name').innerText = question.category;
+        document.getElementById('question-text').innerText = question.question;
+
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+        document.getElementById('feedback').style.display = 'none';
+
+        question.options.forEach((option, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = option;
+            btn.onclick = () => selectAnswer(index);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function selectAnswer(selectedIndex) {
+        const question = questions[currentQuestionIndex];
+        const options = document.querySelectorAll('.option-btn');
+        const feedback = document.getElementById('feedback');
+        const feedbackText = document.getElementById('feedback-text');
+        const explanation = document.getElementById('explanation');
+
+        // Disable all buttons
+        options.forEach(btn => btn.disabled = true);
+
+        if (selectedIndex === question.correctAnswer) {
+            options[selectedIndex].classList.add('correct');
+            feedbackText.innerText = "정답입니다! 🎉";
+            feedbackText.style.color = "var(--success-color)";
+            score++;
+        } else {
+            options[selectedIndex].classList.add('incorrect');
+            options[question.correctAnswer].classList.add('correct');
+            feedbackText.innerText = "아쉽네요, 오답입니다. 😢";
+            feedbackText.style.color = "var(--error-color)";
+        }
+
+        explanation.innerText = question.explanation;
+        feedback.style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            showQuestion();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        switchScreen('result-screen');
+        document.getElementById('final-score').innerText = score;
+        let message = "";
+        if (score === 40) message = "완벽합니다! 당신은 퀴즈 마스터!";
+        else if (score >= 30) message = "정말 대단한 실력이네요!";
+        else if (score >= 20) message = "절반 이상 맞히셨군요! 수고하셨습니다.";
+        else message = "조금 더 노력해볼까요? 다시 도전해보세요!";
+        
+        document.getElementById('result-message').innerText = message;
+    }
+
+    function resetGame() {
+        switchScreen('start-screen');
+    }
+</script>
+
+</body>
 </html>
